@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#07111f">
+<title>J.A.R.V.I.S. — Protótipo 0.1</title>
+<style>
+:root{--bg:#050b14;--panel:#0b1726;--line:#183650;--blue:#56c7ff;--muted:#91a9bd;--white:#eaf6ff}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;background:radial-gradient(ellipse at 50% 0%,#102b43 0%,var(--bg) 58%);color:var(--white);font-family:Segoe UI,Arial,sans-serif;display:flex;justify-content:center;padding:22px}
+.app{width:min(900px,100%);display:flex;flex-direction:column;gap:18px}
+header{display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--line);padding:8px 2px 16px}
+.brand{display:flex;align-items:center;gap:13px}
+.logo{width:46px;height:46px;border:1px solid var(--blue);border-radius:50%;display:grid;place-items:center;color:var(--blue);font-size:22px;box-shadow:0 0 22px #1b9bd455}
+h1{font-size:20px;letter-spacing:4px;margin:0}
+.sub{color:var(--muted);font-size:11px;letter-spacing:2px;margin-top:5px}
+.status{font-size:12px;color:var(--blue);border:1px solid var(--line);border-radius:30px;padding:8px 12px}
+.hero{background:linear-gradient(145deg,#0d2032,#081321);border:1px solid var(--line);border-radius:20px;padding:24px;text-align:center}
+.orb{width:120px;height:120px;margin:5px auto 18px;border:1px solid #43bfff;border-radius:50%;display:grid;place-items:center;box-shadow:0 0 18px #42baff33,inset 0 0 25px #42baff22;position:relative}
+.orb:before,.orb:after{content:"";position:absolute;border:1px solid #43bfff55;border-radius:50%;inset:9px}
+.orb:after{inset:-8px;border-style:dashed;opacity:.5}
+.orb span{font-size:40px;color:var(--blue)}
+.hero h2{font-size:18px;font-weight:500;letter-spacing:2px;margin:0 0 7px}
+.hero p{color:var(--muted);font-size:13px;margin:0}
+.panel{background:#091522;border:1px solid var(--line);border-radius:16px;padding:17px}
+.panel-title{color:var(--blue);font-size:11px;letter-spacing:2px;margin-bottom:12px}
+#messages{min-height:135px;max-height:260px;overflow:auto;display:flex;flex-direction:column;gap:10px}
+.msg{padding:11px 13px;border-radius:12px;max-width:90%;font-size:14px;line-height:1.5;white-space:pre-wrap}
+.ai{background:#10263a;border:1px solid #1a4564;align-self:flex-start}
+.user{background:#12364d;border:1px solid #24688d;align-self:flex-end}
+.controls{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+button{background:#102b40;border:1px solid #2675a0;color:var(--white);border-radius:12px;padding:13px 17px;font-size:14px;font-weight:600;cursor:pointer}
+button.primary{background:#0878ad;border-color:#39bfff;min-width:190px}
+button:focus{outline:3px solid #8bdcff;outline-offset:3px}
+button:active{transform:scale(.98)}
+.note{font-size:12px;line-height:1.5;color:var(--muted)}
+footer{text-align:center;color:#66849b;font-size:11px;padding:4px}
+@media(min-width:650px){body{padding:35px}.hero{padding:32px}.orb{width:145px;height:145px}}
+</style>
+</head>
+<body>
+<main class="app">
+<header>
+ <div class="brand"><div class="logo">◈</div><div><h1>J.A.R.V.I.S.</h1><div class="sub">PERSONAL ASSISTANT · PROTOTYPE 0.1</div></div></div>
+ <div class="status" id="status">● ONLINE</div>
+</header>
+<section class="hero">
+ <div class="orb"><span>◉</span></div>
+ <h2 id="headline">SISTEMA INICIALIZADO</h2>
+ <p id="hint">Protótipo de interface pronto. Aguardando interação.</p>
+</section>
+<section class="panel">
+ <div class="panel-title">REGISTRO DE CONVERSA</div>
+ <div id="messages"><div class="msg ai">Olá. Sou o J.A.R.V.I.S., versão de protótipo. Ainda estou aprendendo minhas funções.</div></div>
+</section>
+<div class="controls">
+ <button class="primary" id="mic">🎙 FALAR COM JARVIS</button>
+ <button id="hello">TESTAR RESPOSTA</button>
+ <button id="stop">PARAR VOZ</button>
+</div>
+<div class="panel">
+ <div class="panel-title">DIAGNÓSTICO</div>
+ <div class="note" id="diagnostic">Verificando recursos do navegador…</div>
+</div>
+<footer>J.A.R.V.I.S. 0.1 · Projeto pessoal · Nenhum áudio é enviado por este protótipo</footer>
+</main>
+<script>
+const $=id=>document.getElementById(id);
+const messages=$("messages");
+function add(text,who="ai"){const el=document.createElement("div");el.className="msg "+who;el.textContent=text;messages.appendChild(el);messages.scrollTop=messages.scrollHeight;}
+let availableVoices=[];
+function loadVoices(){
+ if(!("speechSynthesis" in window)) return;
+ availableVoices=speechSynthesis.getVoices();
+ const select=$("voiceSelect");
+ const current=select.value;
+ select.innerHTML="";
+ const ptVoices=availableVoices.filter(v=>v.lang && v.lang.toLowerCase().startsWith("pt-br"));
+ const choices=ptVoices.length ? ptVoices : availableVoices.filter(v=>v.lang && v.lang.toLowerCase().startsWith("pt"));
+ if(!choices.length){
+  select.innerHTML='<option value="">Voz padrão do navegador</option>';
+  return;
+ }
+ choices.forEach((voice)=>{
+  const option=document.createElement("option");
+  option.value=voice.name;
+  option.textContent=voice.name+" ("+voice.lang+")";
+  select.appendChild(option);
+ });
+ if(current && choices.some(v=>v.name===current)) select.value=current;
+ else{
+  // Prefere uma voz brasileira; o navegador não informa o gênero da voz.
+  const preferred=choices.find(v=>/antonio|daniel|ricardo|felipe|male|mascul/i.test(v.name));
+  select.value=(preferred || choices[0]).name;
+ }
+}
+if("speechSynthesis" in window){
+ loadVoices();
+ speechSynthesis.onvoiceschanged=loadVoices;
+}
+function speak(text){
+ if(!("speechSynthesis" in window)){ $("hint").textContent="Este navegador não oferece voz sintetizada."; return; }
+ loadVoices();
+ speechSynthesis.cancel();
+ const u=new SpeechSynthesisUtterance(text);
+ u.lang="pt-BR";
+ u.rate=1.12;
+ u.pitch=0.92;
+ u.volume=1;
+ const selected=availableVoices.find(v=>v.name===$("voiceSelect").value);
+ if(selected) u.voice=selected;
+ u.onstart=()=>{$("hint").textContent="JARVIS está respondendo por voz.";};
+ u.onerror=()=>{$("hint").textContent="Não foi possível reproduzir esta voz. Tente outra opção na lista.";};
+ speechSynthesis.speak(u);
+}
+function reply(text){
+ const t=text.toLowerCase();
+ let answer;
+ if(t.includes("olá")||t.includes("oi")||t.includes("bom dia")) answer="Olá! Estou funcionando. Ainda sou um protótipo, mas já podemos testar minha interface e minha voz.";
+ else if(t.includes("seu nome")||t.includes("quem é você")) answer="Sou JARVIS, seu assistente pessoal em construção.";
+ else if(t.includes("hora")) answer="O horário mostrado pelo dispositivo é "+new Date().toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"})+".";
+ else if(t.includes("data")||t.includes("dia de hoje")) answer="Hoje é "+new Date().toLocaleDateString("pt-BR",{weekday:"long",day:"numeric",month:"long"})+".";
+ else answer="Recebi seu comando: "+text+". Nesta versão ainda não estou conectado a um modelo de inteligência artificial. Essa será uma das próximas etapas.";
+ add(answer,"ai"); speak(answer);
+}
+$("hello").addEventListener("click",()=>{const s="Teste concluído. Minha interface está funcionando. Próxima missão: conectar meu cérebro de inteligência artificial.";add(s,"ai");speak(s);$("headline").textContent="TESTE CONCLUÍDO";});
+$("stop").addEventListener("click",()=>{if("speechSynthesis" in window)speechSynthesis.cancel();$("hint").textContent="Voz interrompida.";});
+const SpeechRecognition=window.SpeechRecognition||window.webkitSpeechRecognition;
+if(SpeechRecognition){
+ const recognition=new SpeechRecognition();recognition.lang="pt-BR";recognition.continuous=false;recognition.interimResults=false;
+ recognition.onstart=()=>{$("status").textContent="● OUVINDO";$("headline").textContent="ESTOU OUVINDO";$("hint").textContent="Fale agora.";};
+ recognition.onresult=e=>{const said=e.results[0][0].transcript;add(said,"user");reply(said);};
+ recognition.onerror=e=>{$("hint").textContent="Não consegui usar o microfone ("+e.error+"). Verifique as permissões do navegador.";};
+ recognition.onend=()=>{$("status").textContent="● ONLINE";if($("headline").textContent==="ESTOU OUVINDO")$("headline").textContent="SISTEMA INICIALIZADO";};
+ $("mic").addEventListener("click",()=>{try{recognition.start();}catch(e){$("hint").textContent="O reconhecimento já está ativo ou indisponível.";}})
+}else{
+ $("mic").addEventListener("click",()=>{$("hint").textContent="Este navegador não oferece reconhecimento de voz nesta página. Podemos testar a interface e a voz de saída.";});
+}
+const hasSpeech=("speechSynthesis" in window);
+$("diagnostic").textContent="Voz de saída: "+(hasSpeech?"disponível":"não detectada")+". Reconhecimento de voz: "+(SpeechRecognition?"detectado":"não detectado")+". O suporte pode variar no navegador do Xbox.";
+</script>
+</body>
+</html>
